@@ -18,11 +18,13 @@
 		A10000000000000000000009 /* SigningService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000009 /* SigningService.swift */; };
 		A1000000000000000000000A /* IPAArchiveService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000A /* IPAArchiveService.swift */; };
 		A1000000000000000000000B /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = C10000000000000000000001 /* ZIPFoundation */; };
+		A1000000000000000000000C /* Zsign in Frameworks */ = {isa = PBXBuildFile; productRef = C10000000000000000000004 /* Zsign */; };
 		A1000000000000000000000E /* FileImporterRepresentableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000E /* FileImporterRepresentableView.swift */; };
 		A1000000000000000000000F /* UTType+cert.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000F /* UTType+cert.swift */; };
 		A10000000000000000000010 /* UTType+ipa.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000010 /* UTType+ipa.swift */; };
 		A10000000000000000000011 /* IPAItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000011 /* IPAItem.swift */; };
 		A10000000000000000000012 /* IPALibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000012 /* IPALibrary.swift */; };
+		A10000000000000000000013 /* IPAIconLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000013 /* IPAIconLoader.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -43,6 +45,7 @@
 		B10000000000000000000010 /* UTType+ipa.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UTType+ipa.swift"; sourceTree = "<group>"; };
 		B10000000000000000000011 /* IPAItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPAItem.swift; sourceTree = "<group>"; };
 		B10000000000000000000012 /* IPALibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPALibrary.swift; sourceTree = "<group>"; };
+		B10000000000000000000013 /* IPAIconLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPAIconLoader.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -51,6 +54,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A1000000000000000000000B /* ZIPFoundation in Frameworks */,
+				A1000000000000000000000C /* Zsign in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -104,6 +108,7 @@
 				B10000000000000000000009 /* SigningService.swift */,
 				B1000000000000000000000A /* IPAArchiveService.swift */,
 				B10000000000000000000012 /* IPALibrary.swift */,
+				B10000000000000000000013 /* IPAIconLoader.swift */,
 			);
 			path = Managers;
 			sourceTree = "<group>";
@@ -170,6 +175,7 @@
 			name = IPAForge;
 			packageProductDependencies = (
 				C10000000000000000000001 /* ZIPFoundation */,
+				C10000000000000000000004 /* Zsign */,
 			);
 			productName = IPAForge;
 			productReference = B1000000000000000000000D /* IPAForge.app */;
@@ -201,6 +207,7 @@
 			mainGroup = E10000000000000000000001;
 			packageReferences = (
 				C10000000000000000000002 /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
+				C10000000000000000000003 /* XCRemoteSwiftPackageReference "Zsign-Package" */,
 			);
 			productRefGroup = E10000000000000000000003 /* Products */;
 			projectDirPath = "";
@@ -241,6 +248,7 @@
 				A10000000000000000000010 /* UTType+ipa.swift in Sources */,
 				A10000000000000000000011 /* IPAItem.swift in Sources */,
 				A10000000000000000000012 /* IPALibrary.swift in Sources */,
+				A10000000000000000000013 /* IPAIconLoader.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -367,6 +375,14 @@
 				minimumVersion = 0.9.19;
 			};
 		};
+		C10000000000000000000003 /* XCRemoteSwiftPackageReference "Zsign-Package" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/khcrysalis/Zsign-Package.git";
+			requirement = {
+				kind = branch;
+				branch = package;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -374,6 +390,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = C10000000000000000000002 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
 			productName = ZIPFoundation;
+		};
+		C10000000000000000000004 /* Zsign */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C10000000000000000000003 /* XCRemoteSwiftPackageReference "Zsign-Package" */;
+			productName = Zsign;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
