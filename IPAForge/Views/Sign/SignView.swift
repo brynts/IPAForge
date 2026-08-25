@@ -1,35 +1,52 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct SignView: View {
-    // Placeholder data
-    @State private var unsignedIPAs: [String] = []
-    @State private var signedIPAs: [String] = []
+    @StateObject private var library = IPALibrary.shared
+    @StateObject private var certs = CertificateManager.shared
+    
+    @State private var showIPAPicker = false
+    @State private var isBusy = false
+    @State private var busyMessage = ""
+    @State private var errorMessage: String?
+    @State private var showError = false
+    @State private var signingItem: IPAItem?
     
     var body: some View {
         NavigationStack {
             List {
-                // MARK: - Unsigned IPAs
+                // MARK: Unsigned
                 Section {
-                    if unsignedIPAs.isEmpty {
+                    if library.unsigned.isEmpty {
                         Text("No unsigned IPAs")
                             .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .listRowBackground(Color(uiColor: .secondarySystemGroupedBackground))
                     } else {
-                        ForEach(unsignedIPAs, id: \.self) { ipa in
-                            Text(ipa)
+                        ForEach(library.unsigned) { item in
+                            ipaRow(item)
+                        }
+                        .onDelete { indexSet in
+                            delete(items: library.unsigned, at: indexSet)
                         }
                     }
                 } header: {
                     Text("Unsigned IPA")
                 }
                 
-                // MARK: - Signed IPAs
+                // MARK: Signed
                 Section {
-                    if signedIPAs.isEmpty {
+                    if library.signed.isEmpty {
                         Text("No signed IPAs")
                             .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .listRowBackground(Color(uiColor: .secondarySystemGroupedBackground))
                     } else {
-                        ForEach(signedIPAs, id: \.self) { ipa in
-                            Text(ipa)
+                        ForEach(library.signed) { item in
+                            ipaRow(item)
+                        }
+                        .onDelete { indexSet in
+                            delete(items: library.signed, at: indexSet)
                         }
                     }
                 } header: {
@@ -41,7 +58,7 @@ struct SignView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         Button {
-                            // TODO: Add from Files
+                            showIPAPicker = true
                         } label: {
                             Label("Add from Files", systemImage: "folder")
                         }
@@ -54,8 +71,125 @@ struct SignView: View {
                     } label: {
                         Image(systemName: "plus")
                     }
+                    .disabled(isBusy)
                 }
             }
+            .sheet(isPresented: $showIPAPicker) {
+                FileImporterRepresentableView(
+                    allowedContentTypes: [.ipa]
+                ) { urls in
+                    guard let url = urls.first else { return }
+                    importIPA(url)
+                }
+                .ignoresSafeArea()
+            }
+            .overlay {
+                if isBusy {
+                    ZStack {
+                        Color.black.opacity(0.25).ignoresSafeArea()
+                        VStack(spacing: 12) {
+                            ProgressView()
+                            Text(busyMessage)
+                                .font(.subheadline)
+                        }
+                        .padding(24)
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+                    }
+                }
+            }
+            .alert("Error", isPresented: $showError) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(errorMessage ?? "Unknown error")
+            }
+            .onAppear {
+                library.refresh()
+            }
+        }
+    }
+    
+    // MARK: - Row
+    
+    @ViewBuilder
+    private func ipaRow(_ item: IPAItem) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.name)
+                Text(item.url.lastPathComponent)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            
+            Spacer()
+            
+            if !item.isSigned {
+                Button("Sign") {
+                    sign(item)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                .disabled(isBusy || certs.selectedCertificate == nil)
+            }
+        }
+    }
+    
+    // MARK: - Actions
+    
+    private func importIPA(_ url: URL) {
+        isBusy = true
+        busyMessage = "Importing…"
+        Task {
+            do {
+                try library.importFromFiles(url: url)
+            } catch {
+                errorMessage = error.localizedDescription
+                showError = true
+            }
+            isBusy = false
+        }
+    }
+    
+    private func sign(_ item: IPAItem) {
+        guard certs.selectedCertificate != nil else {
+            errorMessage = "Select a certificate in Settings first."
+            showError = true
+            return
+        }
+        
+        isBusy = true
+        busyMessage = "Extracting…"
+        
+        Task {
+            var workDir: URL?
+            do {
+                let archive = IPAArchiveService.shared
+                let extracted = try archive.extractApp(from: item.url)
+                workDir = extracted.workDir
+                
+                busyMessage = "Signing…"
+                try await SigningService.shared.sign(appURL: extracted.appURL)
+                
+                busyMessage = "Packing…"
+                let outputName = item.name + "-signed"
+                _ = try archive.packIPA(workDir: extracted.workDir, outputName: outputName)
+                
+                archive.removeWorkDir(extracted.workDir)
+                workDir = nil
+                library.refresh()
+            } catch {
+                if let workDir {
+                    IPAArchiveService.shared.removeWorkDir(workDir)
+                }
+                errorMessage = error.localizedDescription
+                showError = true
+            }
+            isBusy = false
+        }
+    }
+    
+    private func delete(items: [IPAItem], at offsets: IndexSet) {
+        for index in offsets {
+            try? library.delete(items[index])
         }
     }
 }
