@@ -392,8 +392,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/khcrysalis/Zsign-Package.git";
 			requirement = {
-				kind = branch;
-				branch = package;
+				kind = revision;
+				revision = 7800691e2e65c123987cbb0b0b56de9f2cdc4576;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
