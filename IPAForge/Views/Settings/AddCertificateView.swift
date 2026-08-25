@@ -17,10 +17,7 @@ struct AddCertificateView: View {
     @State private var showError = false
     
     private var canSave: Bool {
-        !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-        p12URL != nil &&
-        provisionURL != nil &&
-        !isSaving
+        p12URL != nil && provisionURL != nil && !isSaving
     }
     
     var body: some View {
@@ -53,7 +50,7 @@ struct AddCertificateView: View {
                 } header: {
                     Text("Files")
                 } footer: {
-                    Text("Select both .p12 and .mobileprovision files.")
+                    Text("Select a .p12 certificate and a .mobileprovision file.")
                 }
                 
                 Section {
@@ -86,10 +83,9 @@ struct AddCertificateView: View {
                     }
                 }
             }
-            // Feather-style UIKit document picker (asCopy: true)
             .sheet(isPresented: $showP12Picker) {
                 FileImporterRepresentableView(
-                    allowedContentTypes: [.p12, .data, .item]
+                    allowedContentTypes: [.p12]
                 ) { urls in
                     guard let url = urls.first else { return }
                     p12URL = url
@@ -101,7 +97,7 @@ struct AddCertificateView: View {
             }
             .sheet(isPresented: $showProvisionPicker) {
                 FileImporterRepresentableView(
-                    allowedContentTypes: [.mobileProvision, .data, .item]
+                    allowedContentTypes: [.mobileProvision]
                 ) { urls in
                     guard let url = urls.first else { return }
                     provisionURL = url
