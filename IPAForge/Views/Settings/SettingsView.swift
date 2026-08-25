@@ -12,6 +12,7 @@ struct SettingsView: View {
                         Text("No Certificates")
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .center)
+                            .listRowSeparator(.hidden)
                             .listRowBackground(Color.clear)
                     } else {
                         ForEach(certificateManager.certificates) { cert in
@@ -31,6 +32,7 @@ struct SettingsView: View {
                             .frame(maxWidth: .infinity)
                     }
                     .frame(maxWidth: .infinity, alignment: .center)
+                    .listRowSeparator(.hidden)
                 } header: {
                     Text("Certificates")
                 } footer: {
@@ -61,8 +63,7 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
                 
-                // Pills
-                FlowPills {
+                HStack(spacing: 6) {
                     statusPill(check: check)
                     agePill(cert: cert)
                     ppqPill(cert: cert)
@@ -113,26 +114,24 @@ struct SettingsView: View {
             if days < 0 {
                 return Pill(text: "Expired \(abs(days))d ago", color: .red)
             } else if days == 0 {
-                return Pill(text: "Expires today", color: .orange)
-            } else if days <= 7 {
-                return Pill(text: "\(days)d left", color: .orange)
+                return Pill(text: "Expires today", color: .yellow)
             } else {
-                return Pill(text: "\(days)d left", color: .secondary)
+                return Pill(text: "\(days)d left", color: .yellow)
             }
         } else if let exp = cert.expirationDate {
             let formatter = DateFormatter()
             formatter.dateStyle = .medium
-            return Pill(text: formatter.string(from: exp), color: .secondary)
+            return Pill(text: formatter.string(from: exp), color: .yellow)
         } else {
             return Pill(text: "Age unknown", color: .secondary)
         }
     }
     
     private func ppqPill(cert: Certificate) -> some View {
-        if let ppq = cert.ppqCheck {
-            return Pill(text: ppq ? "PPQ" : "Not PPQ", color: ppq ? .orange : .secondary)
+        if let ppq = cert.ppqCheck, ppq {
+            return Pill(text: "PPQ", color: .red)
         } else {
-            return Pill(text: "Not PPQ", color: .secondary)
+            return Pill(text: "Not PPQ", color: .green)
         }
     }
 }
@@ -150,18 +149,6 @@ private struct Pill: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(color.opacity(0.15), in: Capsule())
-    }
-}
-
-/// Simple wrapping HStack for pills.
-private struct FlowPills<Content: View>: View {
-    @ViewBuilder var content: Content
-    
-    var body: some View {
-        // Enough for 3 pills on one line on modern phones
-        HStack(spacing: 6) {
-            content
-        }
     }
 }
 
