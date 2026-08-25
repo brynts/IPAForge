@@ -1,7 +1,7 @@
 import Foundation
 
-#if canImport(ZsignSwift)
-import ZsignSwift
+#if canImport(Zsign)
+import Zsign
 #endif
 
 enum SigningError: LocalizedError {
@@ -27,7 +27,6 @@ enum SigningError: LocalizedError {
     }
 }
 
-/// Thin wrapper around Zsign for signing an extracted .app bundle.
 @MainActor
 final class SigningService {
     static let shared = SigningService()
@@ -36,11 +35,6 @@ final class SigningService {
     
     private init() {}
     
-    /// Sign an already-extracted .app directory.
-    /// - Parameters:
-    ///   - appURL: Path to `Something.app`
-    ///   - options: Optional overrides (bundle id, name, version, adhoc)
-    ///   - certificate: Certificate to use. Defaults to selected one.
     func sign(
         appURL: URL,
         options: SigningOptions = .default,
@@ -50,7 +44,7 @@ final class SigningService {
             throw SigningError.appNotFound
         }
         
-        #if canImport(ZsignSwift)
+        #if canImport(Zsign)
         if options.adhoc {
             try await signAdhoc(appURL: appURL, options: options)
             return
@@ -73,7 +67,7 @@ final class SigningService {
         try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
             var finished = false
             
-            _ = Zsign.sign(
+            let ok = Zsign.sign(
                 appPath: appURL.path,
                 provisionPath: provisionPath,
                 p12Path: p12Path,
@@ -82,52 +76,58 @@ final class SigningService {
                 customIdentifier: options.customBundleId ?? "",
                 customName: options.customName ?? "",
                 customVersion: options.customVersion ?? "",
-                removeProvision: !options.removeProvisioning,
-                completion: { success, error in
+                adhoc: false,
+                removeProvision: options.removeProvisioning,
+                completion: { success in
                     guard !finished else { return }
                     finished = true
-                    
-                    if let error {
-                        cont.resume(throwing: SigningError.signFailed(error.localizedDescription))
-                    } else if success == false {
-                        cont.resume(throwing: SigningError.signFailed("Unknown signing error"))
-                    } else {
+                    if success {
                         cont.resume()
+                    } else {
+                        cont.resume(throwing: SigningError.signFailed("Zsign returned failure"))
                     }
                 }
             )
+            
+            // If completion is never called and immediate false
+            if !ok && !finished {
+                finished = true
+                cont.resume(throwing: SigningError.signFailed("Zsign returned false"))
+            }
         }
         #else
         throw SigningError.zsignUnavailable
         #endif
     }
     
-    #if canImport(ZsignSwift)
+    #if canImport(Zsign)
     private func signAdhoc(appURL: URL, options: SigningOptions) async throws {
         try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
             var finished = false
             
-            _ = Zsign.sign(
+            let ok = Zsign.sign(
                 appPath: appURL.path,
                 entitlementsPath: "",
                 customIdentifier: options.customBundleId ?? "",
                 customName: options.customName ?? "",
                 customVersion: options.customVersion ?? "",
                 adhoc: true,
-                removeProvision: !options.removeProvisioning,
-                completion: { success, error in
+                removeProvision: options.removeProvisioning,
+                completion: { success in
                     guard !finished else { return }
                     finished = true
-                    
-                    if let error {
-                        cont.resume(throwing: SigningError.signFailed(error.localizedDescription))
-                    } else if success == false {
-                        cont.resume(throwing: SigningError.signFailed("Unknown adhoc signing error"))
-                    } else {
+                    if success {
                         cont.resume()
+                    } else {
+                        cont.resume(throwing: SigningError.signFailed("Adhoc sign failed"))
                     }
                 }
             )
+            
+            if !ok && !finished {
+                finished = true
+                cont.resume(throwing: SigningError.signFailed("Adhoc sign returned false"))
+            }
         }
     }
     #endif
