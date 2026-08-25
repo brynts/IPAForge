@@ -14,27 +14,7 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     } else {
                         ForEach(certificateManager.certificates) { cert in
-                            HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(cert.name)
-                                    if let team = cert.teamName {
-                                        Text(team)
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                }
-                                
-                                Spacer()
-                                
-                                if cert.isSelected {
-                                    Image(systemName: "checkmark")
-                                        .foregroundStyle(.tint)
-                                }
-                            }
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                certificateManager.select(cert)
-                            }
+                            certificateRow(cert)
                         }
                         .onDelete { indexSet in
                             for index in indexSet {
@@ -58,6 +38,52 @@ struct SettingsView: View {
             .sheet(isPresented: $showAddCertificate) {
                 AddCertificateView()
             }
+        }
+    }
+    
+    @ViewBuilder
+    private func certificateRow(_ cert: Certificate) -> some View {
+        let check = certificateManager.check(cert)
+        
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(cert.name)
+                
+                HStack(spacing: 6) {
+                    if let team = cert.teamName {
+                        Text(team)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    
+                    if check != .ok {
+                        Text("•")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(check.message)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                    } else if let exp = cert.expirationDate {
+                        Text("•")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(exp, style: .date)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            
+            Spacer()
+            
+            if cert.isSelected {
+                Image(systemName: "checkmark")
+                    .foregroundStyle(.tint)
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            certificateManager.select(cert)
         }
     }
 }
