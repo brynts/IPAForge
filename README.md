@@ -8,8 +8,8 @@ Work in progress.
 
 - [x] Certificate manager (import .p12 + .mobileprovision, password validation)
 - [x] Zsign integration (SigningService)
-- [ ] ZipFoundation (extract / repack IPA)
-- [ ] File Manager
+- [x] ZipFoundation (extract / pack IPA via IPAArchiveService)
+- [ ] File Manager UI
 - [ ] Download (background URLSession)
 - [ ] Install flow
 - [ ] Full signing UI
@@ -36,15 +36,26 @@ git submodule update --init --recursive
 
 3. Drag the `IPAForge/` source folder into your Xcode project.
 4. Add local package **Zsign**:
-   - File → Add Package Dependencies…
-   - Add Local… → select the `Zsign` folder (submodule)
-5. (Optional) Add [ZipFoundation](https://github.com/weichsel/ZIPFoundation) via SPM for IPA extract/repack.
+   - File → Add Package Dependencies… → Add Local… → select `Zsign`
+5. Add [ZIPFoundation](https://github.com/weichsel/ZIPFoundation) via SPM.
+6. In Info.plist enable Files app access:
+   - `UIFileSharingEnabled` = YES
+   - `LSSupportsOpeningDocumentsInPlace` = YES
+
+## Storage (visible in Files app)
+
+```
+On My iPhone / IPAForge/
+└── IPAForge/
+    ├── Unsigned/     # imported IPAs
+    ├── Signed/       # signed output IPAs
+    ├── Work/         # temp extract folders
+    └── Certificates/ # managed by CertificateManager (under Documents/Certificates)
+```
 
 ## Zsign
 
-Uses [khcrysalis/Zsign-Package](https://github.com/khcrysalis/Zsign-Package) (`package` branch), same as Feather.
-
-Signing is done via `SigningService.shared.sign(appURL:options:certificate:)` on an extracted `.app` bundle.
+Uses [khcrysalis/Zsign-Package](https://github.com/khcrysalis/Zsign-Package) (`package` branch).
 
 ## License
 
