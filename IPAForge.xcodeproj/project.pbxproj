@@ -19,6 +19,7 @@
 		A1000000000000000000000A /* IPAArchiveService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000A /* IPAArchiveService.swift */; };
 		A1000000000000000000000B /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = C10000000000000000000001 /* ZIPFoundation */; };
 		A1000000000000000000000C /* Zsign in Frameworks */ = {isa = PBXBuildFile; productRef = C10000000000000000000004 /* Zsign */; };
+		A1000000000000000000000D /* zsignc in Frameworks */ = {isa = PBXBuildFile; productRef = C10000000000000000000005 /* zsignc */; };
 		A1000000000000000000000E /* FileImporterRepresentableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000E /* FileImporterRepresentableView.swift */; };
 		A1000000000000000000000F /* UTType+cert.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000F /* UTType+cert.swift */; };
 		A10000000000000000000010 /* UTType+ipa.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000010 /* UTType+ipa.swift */; };
@@ -55,6 +56,7 @@
 			files = (
 				A1000000000000000000000B /* ZIPFoundation in Frameworks */,
 				A1000000000000000000000C /* Zsign in Frameworks */,
+				A1000000000000000000000D /* zsignc in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -73,7 +75,7 @@
 			isa = PBXGroup;
 			children = (
 				B10000000000000000000001 /* IPAForgeApp.swift */,
-				B10000000000000000000002 /* ContentView.swift */,
+				B10000000000000000002 /* ContentView.swift */,
 				E10000000000000000000004 /* Models */,
 				E10000000000000000000005 /* Managers */,
 				E10000000000000000000006 /* Views */,
@@ -134,7 +136,7 @@
 		E10000000000000000000008 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
-				B10000000000000000000004 /* SettingsView.swift */,
+				B10000000000000000004 /* SettingsView.swift */,
 				B10000000000000000000005 /* AddCertificateView.swift */,
 			);
 			path = Settings;
@@ -176,6 +178,7 @@
 			packageProductDependencies = (
 				C10000000000000000000001 /* ZIPFoundation */,
 				C10000000000000000000004 /* Zsign */,
+				C10000000000000000005 /* zsignc */,
 			);
 			productName = IPAForge;
 			productReference = B1000000000000000000000D /* IPAForge.app */;
@@ -207,7 +210,7 @@
 			mainGroup = E10000000000000000000001;
 			packageReferences = (
 				C10000000000000000000002 /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
-				C10000000000000000000003 /* XCRemoteSwiftPackageReference "Zsign-Package" */,
+				C10000000000000000003 /* XCRemoteSwiftPackageReference "Zsign-Package" */,
 			);
 			productRefGroup = E10000000000000000000003 /* Products */;
 			projectDirPath = "";
@@ -306,6 +309,11 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+					"-lc++",
+				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = tr.sapu.IPAForge;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -331,6 +339,11 @@
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+					"-lc++",
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = tr.sapu.IPAForge;
@@ -395,6 +408,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = C10000000000000000000003 /* XCRemoteSwiftPackageReference "Zsign-Package" */;
 			productName = Zsign;
+		};
+		C10000000000000000000005 /* zsignc */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C10000000000000000000003 /* XCRemoteSwiftPackageReference "Zsign-Package" */;
+			productName = zsignc;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
