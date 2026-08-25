@@ -7,7 +7,6 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
-                // MARK: - Certificates
                 Section {
                     if certificateManager.certificates.isEmpty {
                         Text("No Certificates")
@@ -45,31 +44,37 @@ struct SettingsView: View {
     private func certificateRow(_ cert: Certificate) -> some View {
         let check = certificateManager.check(cert)
         
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(cert.name)
+                    .font(.body.weight(.medium))
                 
+                if let team = cert.teamName {
+                    Text(team)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                
+                // Status line: Valid/Expired • Expires in Xd • PPQ
                 HStack(spacing: 6) {
-                    if let team = cert.teamName {
-                        Text(team)
-                            .font(.caption)
+                    statusBadge(check: check, cert: cert)
+                    
+                    if let days = cert.daysRemaining, check == .ok {
+                        Text("•")
+                            .font(.caption2)
                             .foregroundStyle(.secondary)
+                        Text(days == 0 ? "Expires today" : "\(days)d left")
+                            .font(.caption2)
+                            .foregroundStyle(days <= 7 ? .orange : .secondary)
                     }
                     
-                    if check != .ok {
+                    if let ppq = cert.ppqCheck {
                         Text("•")
-                            .font(.caption)
+                            .font(.caption2)
                             .foregroundStyle(.secondary)
-                        Text(check.message)
-                            .font(.caption)
-                            .foregroundStyle(.red)
-                    } else if let exp = cert.expirationDate {
-                        Text("•")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text(exp, style: .date)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        Text(ppq ? "PPQ" : "No PPQ")
+                            .font(.caption2)
+                            .foregroundStyle(ppq ? .orange : .secondary)
                     }
                 }
             }
@@ -84,6 +89,32 @@ struct SettingsView: View {
         .contentShape(Rectangle())
         .onTapGesture {
             certificateManager.select(cert)
+        }
+    }
+    
+    @ViewBuilder
+    private func statusBadge(check: CertificateCheckResult, cert: Certificate) -> some View {
+        switch check {
+        case .ok:
+            Text("Valid")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.green)
+        case .expired:
+            Text("Expired")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.red)
+        case .missingFiles:
+            Text("Files missing")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.red)
+        case .wrongPassword:
+            Text("Wrong password")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.red)
+        case .invalidP12:
+            Text("Invalid .p12")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.red)
         }
     }
 }
