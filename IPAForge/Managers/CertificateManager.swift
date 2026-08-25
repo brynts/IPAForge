@@ -174,7 +174,7 @@ class CertificateManager: ObservableObject {
     private func parseMobileProvision(at url: URL) throws -> ProvisionInfo {
         let data = try Data(contentsOf: url)
         
-        guard let content = String(data: data, encoding: .ascii) ?? String(data: data, encoding: .utf8) else {
+        guard let content = String(data: data, encoding: .isoLatin1) else {
             return ProvisionInfo()
         }
         
@@ -194,15 +194,40 @@ class CertificateManager: ObservableObject {
         info.teamName = plist["TeamName"] as? String
         info.appIDName = plist["AppIDName"] as? String
         info.provisionName = plist["Name"] as? String
-        info.creationDate = plist["CreationDate"] as? Date
-        info.expirationDate = plist["ExpirationDate"] as? Date
-        info.ppqCheck = plist["PPQCheck"] as? Bool
+        info.creationDate = dateValue(plist["CreationDate"])
+        info.expirationDate = dateValue(plist["ExpirationDate"])
+        info.ppqCheck = boolValue(plist["PPQCheck"])
         
         if let teamIds = plist["TeamIdentifier"] as? [String] {
             info.teamIdentifier = teamIds.first
         }
         
         return info
+    }
+    
+    private func dateValue(_ any: Any?) -> Date? {
+        if let date = any as? Date { return date }
+        if let interval = any as? TimeInterval { return Date(timeIntervalSinceReferenceDate: interval) }
+        if let number = any as? NSNumber {
+            return Date(timeIntervalSinceReferenceDate: number.doubleValue)
+        }
+        if let string = any as? String {
+            let formatter = ISO8601DateFormatter()
+            if let d = formatter.date(from: string) { return d }
+        }
+        return nil
+    }
+    
+    private func boolValue(_ any: Any?) -> Bool? {
+        if let b = any as? Bool { return b }
+        if let n = any as? NSNumber { return n.boolValue }
+        if let i = any as? Int { return i != 0 }
+        if let s = any as? String {
+            let lower = s.lowercased()
+            if ["true", "yes", "1"].contains(lower) { return true }
+            if ["false", "no", "0"].contains(lower) { return false }
+        }
+        return nil
     }
     
     // MARK: - Persistence
