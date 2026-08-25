@@ -7,13 +7,13 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
+                // MARK: Certificates list
                 Section {
                     if certificateManager.certificates.isEmpty {
                         Text("No Certificates")
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .center)
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
+                            .listRowBackground(Color(uiColor: .secondarySystemGroupedBackground))
                     } else {
                         ForEach(certificateManager.certificates) { cert in
                             certificateRow(cert)
@@ -24,7 +24,14 @@ struct SettingsView: View {
                             }
                         }
                     }
-                    
+                } header: {
+                    Text("Certificates")
+                } footer: {
+                    Text("Select a certificate to use for signing.")
+                }
+                
+                // MARK: Add (separated section)
+                Section {
                     Button {
                         showAddCertificate = true
                     } label: {
@@ -32,11 +39,6 @@ struct SettingsView: View {
                             .frame(maxWidth: .infinity)
                     }
                     .frame(maxWidth: .infinity, alignment: .center)
-                    .listRowSeparator(.hidden)
-                } header: {
-                    Text("Certificates")
-                } footer: {
-                    Text("Select a certificate to use for signing.")
                 }
             }
             .navigationTitle("Settings")
@@ -83,8 +85,6 @@ struct SettingsView: View {
             certificateManager.select(cert)
         }
     }
-    
-    // MARK: - Pills
     
     private func statusPill(check: CertificateCheckResult) -> some View {
         let text: String
@@ -135,8 +135,6 @@ struct SettingsView: View {
         }
     }
 }
-
-// MARK: - Pill UI
 
 private struct Pill: View {
     let text: String
