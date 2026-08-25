@@ -12,11 +12,15 @@ struct AddCertificateView: View {
     
     @State private var showP12Picker = false
     @State private var showProvisionPicker = false
+    @State private var isSaving = false
+    @State private var errorMessage: String?
+    @State private var showError = false
     
     private var canSave: Bool {
         !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         p12URL != nil &&
-        provisionURL != nil
+        provisionURL != nil &&
+        !isSaving
     }
     
     var body: some View {
@@ -24,9 +28,11 @@ struct AddCertificateView: View {
             Form {
                 Section {
                     TextField("Certificate Name", text: $name)
-                    SecureField("Password (optional)", text: $password)
+                    SecureField("Password", text: $password)
                 } header: {
                     Text("Info")
+                } footer: {
+                    Text("Password is required if your .p12 is encrypted.")
                 }
                 
                 Section {
@@ -64,12 +70,17 @@ struct AddCertificateView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .disabled(isSaving)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        save()
+                    if isSaving {
+                        ProgressView()
+                    } else {
+                        Button("Save") {
+                            save()
+                        }
+                        .disabled(!canSave)
                     }
-                    .disabled(!canSave)
                 }
             }
             .fileImporter(
@@ -77,38 +88,75 @@ struct AddCertificateView: View {
                 allowedContentTypes: [UTType(filenameExtension: "p12") ?? .data],
                 allowsMultipleSelection: false
             ) { result in
-                if case .success(let urls) = result {
-                    p12URL = urls.first
-                    if name.isEmpty, let fileName = urls.first?.deletingPathExtension().lastPathComponent {
-                        name = fileName
-                    }
-                }
+                handleP12Pick(result)
             }
             .fileImporter(
                 isPresented: $showProvisionPicker,
-                allowedContentTypes: [UTType(filenameExtension: "mobileprovision") ?? .data],
+                allowedContentTypes: [
+                    UTType(filenameExtension: "mobileprovision") ?? .data
+                ],
                 allowsMultipleSelection: false
             ) { result in
-                if case .success(let urls) = result {
-                    provisionURL = urls.first
-                }
+                handleProvisionPick(result)
             }
+            .alert("Error", isPresented: $showError) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(errorMessage ?? "Unknown error")
+            }
+        }
+    }
+    
+    // MARK: - Actions
+    
+    private func handleP12Pick(_ result: Result<[URL], Error>) {
+        switch result {
+        case .success(let urls):
+            guard let url = urls.first else { return }
+            p12URL = url
+            if name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                name = url.deletingPathExtension().lastPathComponent
+            }
+        case .failure(let error):
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+    }
+    
+    private func handleProvisionPick(_ result: Result<[URL], Error>) {
+        switch result {
+        case .success(let urls):
+            provisionURL = urls.first
+        case .failure(let error):
+            errorMessage = error.localizedDescription
+            showError = true
         }
     }
     
     private func save() {
         guard let p12 = p12URL, let provision = provisionURL else { return }
         
-        let cert = Certificate(
-            name: name.trimmingCharacters(in: .whitespacesAndNewlines),
-            p12FileName: p12.lastPathComponent,
-            mobileProvisionFileName: provision.lastPathComponent,
-            password: password.isEmpty ? nil : password
-        )
+        isSaving = true
         
-        // TODO: Actually copy files to app container & parse provision for team/expiration
-        manager.add(cert)
-        dismiss()
+        Task {
+            do {
+                let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+                let pwd = password.isEmpty ? nil : password
+                
+                _ = try manager.add(
+                    name: trimmedName,
+                    p12SourceURL: p12,
+                    provisionSourceURL: provision,
+                    password: pwd
+                )
+                
+                dismiss()
+            } catch {
+                errorMessage = error.localizedDescription
+                showError = true
+                isSaving = false
+            }
+        }
     }
 }
 
