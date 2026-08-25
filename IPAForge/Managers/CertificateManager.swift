@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import Security
 
 @MainActor
 class CertificateManager: ObservableObject {
@@ -41,17 +42,13 @@ class CertificateManager: ObservableObject {
     
     // MARK: - Add / Remove / Select
     
-    /// Copy files into app container, parse provision, then save.
+    /// Validate password, copy files, parse provision, then save.
     func add(
         name: String,
         p12SourceURL: URL,
         provisionSourceURL: URL,
         password: String?
     ) throws -> Certificate {
-        let id = UUID()
-        let folder = certificatesDirectory.appendingPathComponent(id.uuidString, isDirectory: true)
-        try fileManager.createDirectory(at: folder, withIntermediateDirectories: true)
-        
         // Need security-scoped access for files picked from Files app
         let p12Access = p12SourceURL.startAccessingSecurityScopedResource()
         let provisionAccess = provisionSourceURL.startAccessingSecurityScopedResource()
@@ -59,6 +56,14 @@ class CertificateManager: ObservableObject {
             if p12Access { p12SourceURL.stopAccessingSecurityScopedResource() }
             if provisionAccess { provisionSourceURL.stopAccessingSecurityScopedResource() }
         }
+        
+        // 1. Validate .p12 + password first
+        try validateP12(at: p12SourceURL, password: password)
+        
+        // 2. Create folder & copy files
+        let id = UUID()
+        let folder = certificatesDirectory.appendingPathComponent(id.uuidString, isDirectory: true)
+        try fileManager.createDirectory(at: folder, withIntermediateDirectories: true)
         
         let p12Name = p12SourceURL.lastPathComponent
         let provisionName = provisionSourceURL.lastPathComponent
@@ -69,10 +74,10 @@ class CertificateManager: ObservableObject {
         try fileManager.copyItem(at: p12SourceURL, to: destP12)
         try fileManager.copyItem(at: provisionSourceURL, to: destProvision)
         
-        // Parse mobileprovision
+        // 3. Parse mobileprovision
         let info = try parseMobileProvision(at: destProvision)
         
-        var cert = Certificate(
+        let cert = Certificate(
             id: id,
             name: name,
             p12FileName: p12Name,
@@ -108,18 +113,53 @@ class CertificateManager: ObservableObject {
         save()
     }
     
-    /// Basic check: files still exist + not expired
+    /// Full check: files exist + not expired + password still works
     func check(_ certificate: Certificate) -> CertificateCheckResult {
-        let p12Exists = fileManager.fileExists(atPath: p12URL(for: certificate).path)
-        let provisionExists = fileManager.fileExists(atPath: provisionURL(for: certificate).path)
+        let p12Path = p12URL(for: certificate)
+        let provisionPath = provisionURL(for: certificate)
         
-        if !p12Exists || !provisionExists {
+        guard fileManager.fileExists(atPath: p12Path.path),
+              fileManager.fileExists(atPath: provisionPath.path) else {
             return .missingFiles
         }
+        
         if certificate.isExpired {
             return .expired
         }
+        
+        do {
+            try validateP12(at: p12Path, password: certificate.password)
+        } catch CertificateError.wrongPassword {
+            return .wrongPassword
+        } catch {
+            return .invalidP12
+        }
+        
         return .ok
+    }
+    
+    // MARK: - P12 Validation
+    
+    /// Throws if password is wrong or file is not a valid PKCS#12.
+    func validateP12(at url: URL, password: String?) throws {
+        let data = try Data(contentsOf: url)
+        let pwd = password ?? ""
+        
+        let options: [String: Any] = [
+            kSecImportExportPassphrase as String: pwd
+        ]
+        
+        var items: CFArray?
+        let status = SecPKCS12Import(data as CFData, options as CFDictionary, &items)
+        
+        switch status {
+        case errSecSuccess:
+            return
+        case errSecAuthFailed, errSecPkcs12VerifyFailure:
+            throw CertificateError.wrongPassword
+        default:
+            throw CertificateError.invalidP12(status)
+        }
     }
     
     // MARK: - Parse mobileprovision
@@ -183,16 +223,36 @@ class CertificateManager: ObservableObject {
     }
 }
 
+// MARK: - Errors & Check Result
+
+enum CertificateError: LocalizedError {
+    case wrongPassword
+    case invalidP12(OSStatus)
+    
+    var errorDescription: String? {
+        switch self {
+        case .wrongPassword:
+            return "Wrong password for the .p12 certificate."
+        case .invalidP12(let status):
+            return "Invalid .p12 file (error \(status))."
+        }
+    }
+}
+
 enum CertificateCheckResult {
     case ok
     case missingFiles
     case expired
+    case wrongPassword
+    case invalidP12
     
     var message: String {
         switch self {
         case .ok: return "Valid"
-        case .missingFiles: return "Certificate files missing"
-        case .expired: return "Certificate expired"
+        case .missingFiles: return "Files missing"
+        case .expired: return "Expired"
+        case .wrongPassword: return "Wrong password"
+        case .invalidP12: return "Invalid .p12"
         }
     }
 }
