@@ -41,21 +41,18 @@ jobs:
             -skipPackagePluginValidation \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            | xcbeautify || true
-
-          # Fail if no .app produced
-          APP_PATH=$(find build -name "IPAForge.app" | head -n 1)
-          if [ -z "$APP_PATH" ]; then
-            echo "Build failed: IPAForge.app not found"
-            exit 1
-          fi
-          echo "Built: $APP_PATH"
+            CODE_SIGNING_REQUIRED=NO
 
       - name: Package IPA
         run: |
           set -euo pipefail
           APP_PATH=$(find build -name "IPAForge.app" | head -n 1)
+          if [ -z "$APP_PATH" ]; then
+            echo "IPAForge.app not found"
+            find build -type d -name "*.app" || true
+            exit 1
+          fi
+          echo "Found: $APP_PATH"
           rm -rf Payload
           mkdir -p Payload
           cp -R "$APP_PATH" Payload/
