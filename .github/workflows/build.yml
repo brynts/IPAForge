@@ -27,9 +27,13 @@ jobs:
 
       - name: Resolve packages
         run: |
+          set -euo pipefail
           xcodebuild -resolvePackageDependencies \
             -project IPAForge.xcodeproj \
-            -scheme IPAForge
+            -scheme IPAForge \
+            -derivedDataPath build
+          echo "--- Package.resolved ---"
+          find . -name Package.resolved -print -exec cat {} \; || true
 
       - name: Build (unsigned)
         run: |
