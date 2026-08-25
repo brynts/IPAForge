@@ -7,7 +7,6 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
-                // MARK: Certificates list
                 Section {
                     if certificateManager.certificates.isEmpty {
                         Text("No Certificates")
@@ -24,14 +23,7 @@ struct SettingsView: View {
                             }
                         }
                     }
-                } header: {
-                    Text("Certificates")
-                } footer: {
-                    Text("Select a certificate to use for signing.")
-                }
-                
-                // MARK: Add (separated section)
-                Section {
+                    
                     Button {
                         showAddCertificate = true
                     } label: {
@@ -39,6 +31,10 @@ struct SettingsView: View {
                             .frame(maxWidth: .infinity)
                     }
                     .frame(maxWidth: .infinity, alignment: .center)
+                } header: {
+                    Text("Certificates")
+                } footer: {
+                    Text("Select a certificate to use for signing.")
                 }
             }
             .navigationTitle("Settings")
