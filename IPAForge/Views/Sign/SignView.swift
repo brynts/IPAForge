@@ -10,12 +10,11 @@ struct SignView: View {
     @State private var busyMessage = ""
     @State private var errorMessage: String?
     @State private var showError = false
-    @State private var signingItem: IPAItem?
+    @State private var iconCache: [URL: UIImage] = [:]
     
     var body: some View {
         NavigationStack {
             List {
-                // MARK: Unsigned
                 Section {
                     if library.unsigned.isEmpty {
                         Text("No unsigned IPAs")
@@ -34,7 +33,6 @@ struct SignView: View {
                     Text("Unsigned IPA")
                 }
                 
-                // MARK: Signed
                 Section {
                     if library.signed.isEmpty {
                         Text("No signed IPAs")
@@ -104,6 +102,13 @@ struct SignView: View {
             }
             .onAppear {
                 library.refresh()
+                loadMissingIcons()
+            }
+            .onChange(of: library.unsigned.count) { _, _ in
+                loadMissingIcons()
+            }
+            .onChange(of: library.signed.count) { _, _ in
+                loadMissingIcons()
             }
         }
     }
@@ -112,7 +117,11 @@ struct SignView: View {
     
     @ViewBuilder
     private func ipaRow(_ item: IPAItem) -> some View {
-        HStack {
+        HStack(spacing: 12) {
+            appIcon(for: item.url)
+                .frame(width: 44, height: 44)
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.name)
                 Text(item.url.lastPathComponent)
@@ -133,7 +142,37 @@ struct SignView: View {
         }
     }
     
+    @ViewBuilder
+    private func appIcon(for url: URL) -> some View {
+        if let image = iconCache[url] {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+        } else {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color(uiColor: .tertiarySystemFill))
+                .overlay {
+                    Image(systemName: "app.fill")
+                        .foregroundStyle(.secondary)
+                }
+        }
+    }
+    
     // MARK: - Actions
+    
+    private func loadMissingIcons() {
+        let all = library.unsigned + library.signed
+        for item in all where iconCache[item.url] == nil {
+            Task.detached(priority: .utility) {
+                let image = IPAIconLoader.loadIcon(from: item.url)
+                await MainActor.run {
+                    if let image {
+                        iconCache[item.url] = image
+                    }
+                }
+            }
+        }
+    }
     
     private func importIPA(_ url: URL) {
         isBusy = true
@@ -141,6 +180,7 @@ struct SignView: View {
         Task {
             do {
                 try library.importFromFiles(url: url)
+                loadMissingIcons()
             } catch {
                 errorMessage = error.localizedDescription
                 showError = true
@@ -176,6 +216,7 @@ struct SignView: View {
                 archive.removeWorkDir(extracted.workDir)
                 workDir = nil
                 library.refresh()
+                loadMissingIcons()
             } catch {
                 if let workDir {
                     IPAArchiveService.shared.removeWorkDir(workDir)
