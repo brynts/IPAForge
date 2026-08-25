@@ -20,6 +20,9 @@
 		A1000000000000000000000B /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = C10000000000000000000001 /* ZIPFoundation */; };
 		A1000000000000000000000E /* FileImporterRepresentableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000E /* FileImporterRepresentableView.swift */; };
 		A1000000000000000000000F /* UTType+cert.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000F /* UTType+cert.swift */; };
+		A10000000000000000000010 /* UTType+ipa.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000010 /* UTType+ipa.swift */; };
+		A10000000000000000000011 /* IPAItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000011 /* IPAItem.swift */; };
+		A10000000000000000000012 /* IPALibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000012 /* IPALibrary.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -37,6 +40,9 @@
 		B1000000000000000000000D /* IPAForge.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = IPAForge.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B1000000000000000000000E /* FileImporterRepresentableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileImporterRepresentableView.swift; sourceTree = "<group>"; };
 		B1000000000000000000000F /* UTType+cert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UTType+cert.swift"; sourceTree = "<group>"; };
+		B10000000000000000000010 /* UTType+ipa.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UTType+ipa.swift"; sourceTree = "<group>"; };
+		B10000000000000000000011 /* IPAItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPAItem.swift; sourceTree = "<group>"; };
+		B10000000000000000000012 /* IPALibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPALibrary.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -86,6 +92,7 @@
 			children = (
 				B10000000000000000000006 /* Certificate.swift */,
 				B10000000000000000000007 /* SigningOptions.swift */,
+				B10000000000000000000011 /* IPAItem.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -96,6 +103,7 @@
 				B10000000000000000000008 /* CertificateManager.swift */,
 				B10000000000000000000009 /* SigningService.swift */,
 				B1000000000000000000000A /* IPAArchiveService.swift */,
+				B10000000000000000000012 /* IPALibrary.swift */,
 			);
 			path = Managers;
 			sourceTree = "<group>";
@@ -131,6 +139,7 @@
 			isa = PBXGroup;
 			children = (
 				B1000000000000000000000F /* UTType+cert.swift */,
+				B10000000000000000000010 /* UTType+ipa.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -229,6 +238,9 @@
 				A1000000000000000000000A /* IPAArchiveService.swift in Sources */,
 				A1000000000000000000000E /* FileImporterRepresentableView.swift in Sources */,
 				A1000000000000000000000F /* UTType+cert.swift in Sources */,
+				A10000000000000000000010 /* UTType+ipa.swift in Sources */,
+				A10000000000000000000011 /* IPAItem.swift in Sources */,
+				A10000000000000000000012 /* IPALibrary.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
