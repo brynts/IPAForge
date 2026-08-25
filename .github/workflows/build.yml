@@ -18,32 +18,51 @@ jobs:
 
       - name: Select Xcode
         run: |
-          # Prefer a specific version if available, fallback to default
-          sudo xcode-select -s /Applications/Xcode_26.3.0.app || sudo xcode-select -s /Applications/Xcode.app
+          sudo xcode-select -s /Applications/Xcode_26.3.0.app 2>/dev/null \
+            || sudo xcode-select -s /Applications/Xcode_26.app 2>/dev/null \
+            || sudo xcode-select -s /Applications/Xcode.app
           xcodebuild -version
+
+      - name: Resolve packages
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -project IPAForge.xcodeproj \
+            -scheme IPAForge
 
       - name: Build (unsigned)
         run: |
-          # TODO: adjust scheme/project name after Xcode project is created
+          set -euo pipefail
           xcodebuild \
             -project IPAForge.xcodeproj \
             -scheme IPAForge \
             -configuration Release \
             -destination "generic/platform=iOS" \
             -derivedDataPath build \
+            -skipPackagePluginValidation \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO
+            CODE_SIGNING_REQUIRED=NO \
+            | xcbeautify || true
+
+          # Fail if no .app produced
+          APP_PATH=$(find build -name "IPAForge.app" | head -n 1)
+          if [ -z "$APP_PATH" ]; then
+            echo "Build failed: IPAForge.app not found"
+            exit 1
+          fi
+          echo "Built: $APP_PATH"
 
       - name: Package IPA
         run: |
+          set -euo pipefail
+          APP_PATH=$(find build -name "IPAForge.app" | head -n 1)
+          rm -rf Payload
           mkdir -p Payload
-          APP_PATH=$(find build -name "*.app" | head -n 1)
-          echo "Found app: $APP_PATH"
           cp -R "$APP_PATH" Payload/
-          zip -r IPAForge.ipa Payload
+          zip -qr IPAForge.ipa Payload
           mkdir -p upload
           mv IPAForge.ipa upload/
+          ls -lh upload/
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
