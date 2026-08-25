@@ -1,0 +1,12 @@
+<!--
+  Add these keys to your app Info.plist so Documents appear in Files app:
+
+  UIFileSharingEnabled = YES
+  LSSupportsOpeningDocumentsInPlace = YES
+
+  Example (raw):
+-->
+<key>UIFileSharingEnabled</key>
+<true/>
+<key>LSSupportsOpeningDocumentsInPlace</key>
+<true/>
