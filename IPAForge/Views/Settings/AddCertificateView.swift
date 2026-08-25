@@ -27,15 +27,6 @@ struct AddCertificateView: View {
         NavigationStack {
             Form {
                 Section {
-                    TextField("Certificate Name", text: $name)
-                    SecureField("Password", text: $password)
-                } header: {
-                    Text("Info")
-                } footer: {
-                    Text("Password is required if your .p12 is encrypted.")
-                }
-                
-                Section {
                     Button {
                         showP12Picker = true
                     } label: {
@@ -64,6 +55,18 @@ struct AddCertificateView: View {
                 } footer: {
                     Text("Select both .p12 and .mobileprovision files.")
                 }
+                
+                Section {
+                    SecureField("Password", text: $password)
+                } header: {
+                    Text("Password")
+                } footer: {
+                    Text("Leave blank if the .p12 has no password.")
+                }
+                
+                Section {
+                    TextField("Nickname (Optional)", text: $name)
+                }
             }
             .navigationTitle("Add Certificate")
             .navigationBarTitleDisplayMode(.inline)
@@ -83,53 +86,33 @@ struct AddCertificateView: View {
                     }
                 }
             }
-            .fileImporter(
-                isPresented: $showP12Picker,
-                allowedContentTypes: [UTType(filenameExtension: "p12") ?? .data],
-                allowsMultipleSelection: false
-            ) { result in
-                handleP12Pick(result)
+            // Feather-style UIKit document picker (asCopy: true)
+            .sheet(isPresented: $showP12Picker) {
+                FileImporterRepresentableView(
+                    allowedContentTypes: [.p12, .data, .item]
+                ) { urls in
+                    guard let url = urls.first else { return }
+                    p12URL = url
+                    if name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        name = url.deletingPathExtension().lastPathComponent
+                    }
+                }
+                .ignoresSafeArea()
             }
-            .fileImporter(
-                isPresented: $showProvisionPicker,
-                allowedContentTypes: [
-                    UTType(filenameExtension: "mobileprovision") ?? .data
-                ],
-                allowsMultipleSelection: false
-            ) { result in
-                handleProvisionPick(result)
+            .sheet(isPresented: $showProvisionPicker) {
+                FileImporterRepresentableView(
+                    allowedContentTypes: [.mobileProvision, .data, .item]
+                ) { urls in
+                    guard let url = urls.first else { return }
+                    provisionURL = url
+                }
+                .ignoresSafeArea()
             }
             .alert("Error", isPresented: $showError) {
                 Button("OK", role: .cancel) { }
             } message: {
                 Text(errorMessage ?? "Unknown error")
             }
-        }
-    }
-    
-    // MARK: - Actions
-    
-    private func handleP12Pick(_ result: Result<[URL], Error>) {
-        switch result {
-        case .success(let urls):
-            guard let url = urls.first else { return }
-            p12URL = url
-            if name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                name = url.deletingPathExtension().lastPathComponent
-            }
-        case .failure(let error):
-            errorMessage = error.localizedDescription
-            showError = true
-        }
-    }
-    
-    private func handleProvisionPick(_ result: Result<[URL], Error>) {
-        switch result {
-        case .success(let urls):
-            provisionURL = urls.first
-        case .failure(let error):
-            errorMessage = error.localizedDescription
-            showError = true
         }
     }
     
@@ -140,7 +123,10 @@ struct AddCertificateView: View {
         
         Task {
             do {
-                let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+                var trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+                if trimmedName.isEmpty {
+                    trimmedName = p12.deletingPathExtension().lastPathComponent
+                }
                 let pwd = password.isEmpty ? nil : password
                 
                 _ = try manager.add(
