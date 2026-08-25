@@ -8,10 +8,10 @@ enum IPAIconLoader {
     /// Best-effort: pull a PNG icon out of an IPA zip.
     static func loadIcon(from ipaURL: URL) -> UIImage? {
         #if canImport(ZIPFoundation)
-        guard let archive = Archive(url: ipaURL, accessMode: .read) else { return nil }
+        guard let archive = try? Archive(url: ipaURL, accessMode: .read) else { return nil }
         
         var bestPath: String?
-        var bestScore = 0
+        var bestScore: UInt64 = 0
         
         for entry in archive {
             let path = entry.path
@@ -19,7 +19,6 @@ enum IPAIconLoader {
                   path.contains(".app/"),
                   path.lowercased().hasSuffix(".png") else { continue }
             
-            // Skip nested frameworks/plugins icons when possible
             let lower = path.lowercased()
             if lower.contains(".appex/") || lower.contains(".framework/") { continue }
             
