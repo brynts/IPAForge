@@ -42,14 +42,12 @@ class CertificateManager: ObservableObject {
     
     // MARK: - Add / Remove / Select
     
-    /// Validate password, copy files, parse provision, then save.
     func add(
         name: String,
         p12SourceURL: URL,
         provisionSourceURL: URL,
         password: String?
     ) throws -> Certificate {
-        // Need security-scoped access for files picked from Files app
         let p12Access = p12SourceURL.startAccessingSecurityScopedResource()
         let provisionAccess = provisionSourceURL.startAccessingSecurityScopedResource()
         defer {
@@ -57,10 +55,8 @@ class CertificateManager: ObservableObject {
             if provisionAccess { provisionSourceURL.stopAccessingSecurityScopedResource() }
         }
         
-        // 1. Validate .p12 + password first
         try validateP12(at: p12SourceURL, password: password)
         
-        // 2. Create folder & copy files
         let id = UUID()
         let folder = certificatesDirectory.appendingPathComponent(id.uuidString, isDirectory: true)
         try fileManager.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -74,7 +70,6 @@ class CertificateManager: ObservableObject {
         try fileManager.copyItem(at: p12SourceURL, to: destP12)
         try fileManager.copyItem(at: provisionSourceURL, to: destProvision)
         
-        // 3. Parse mobileprovision
         let info = try parseMobileProvision(at: destProvision)
         
         let cert = Certificate(
@@ -85,7 +80,11 @@ class CertificateManager: ObservableObject {
             password: password,
             teamName: info.teamName,
             teamIdentifier: info.teamIdentifier,
+            appIDName: info.appIDName,
+            provisionName: info.provisionName,
+            creationDate: info.creationDate,
             expirationDate: info.expirationDate,
+            ppqCheck: info.ppqCheck,
             isSelected: certificates.isEmpty
         )
         
@@ -113,7 +112,6 @@ class CertificateManager: ObservableObject {
         save()
     }
     
-    /// Full check: files exist + not expired + password still works
     func check(_ certificate: Certificate) -> CertificateCheckResult {
         let p12Path = p12URL(for: certificate)
         let provisionPath = provisionURL(for: certificate)
@@ -140,7 +138,6 @@ class CertificateManager: ObservableObject {
     
     // MARK: - P12 Validation
     
-    /// Throws if password is wrong or file is not a valid PKCS#12.
     func validateP12(at url: URL, password: String?) throws {
         let data = try Data(contentsOf: url)
         let pwd = password ?? ""
@@ -167,13 +164,16 @@ class CertificateManager: ObservableObject {
     private struct ProvisionInfo {
         var teamName: String?
         var teamIdentifier: String?
+        var appIDName: String?
+        var provisionName: String?
+        var creationDate: Date?
         var expirationDate: Date?
+        var ppqCheck: Bool?
     }
     
     private func parseMobileProvision(at url: URL) throws -> ProvisionInfo {
         let data = try Data(contentsOf: url)
         
-        // mobileprovision is a CMS blob; plist sits between XML headers
         guard let content = String(data: data, encoding: .ascii) ?? String(data: data, encoding: .utf8) else {
             return ProvisionInfo()
         }
@@ -191,16 +191,15 @@ class CertificateManager: ObservableObject {
         
         var info = ProvisionInfo()
         
-        if let teamName = plist["TeamName"] as? String {
-            info.teamName = teamName
-        }
+        info.teamName = plist["TeamName"] as? String
+        info.appIDName = plist["AppIDName"] as? String
+        info.provisionName = plist["Name"] as? String
+        info.creationDate = plist["CreationDate"] as? Date
+        info.expirationDate = plist["ExpirationDate"] as? Date
+        info.ppqCheck = plist["PPQCheck"] as? Bool
         
         if let teamIds = plist["TeamIdentifier"] as? [String] {
             info.teamIdentifier = teamIds.first
-        }
-        
-        if let exp = plist["ExpirationDate"] as? Date {
-            info.expirationDate = exp
         }
         
         return info
@@ -222,8 +221,6 @@ class CertificateManager: ObservableObject {
         certificates = decoded
     }
 }
-
-// MARK: - Errors & Check Result
 
 enum CertificateError: LocalizedError {
     case wrongPassword
