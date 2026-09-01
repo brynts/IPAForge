@@ -174,7 +174,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10000000000000000000001 /* IPAForgeApp.swift in Sources */,
-				A10000000000000000002 /* ContentView.swift in Sources */,
+				A10000000000000000000002 /* ContentView.swift in Sources */,
 				A10000000000000000000003 /* SignView.swift in Sources */,
 				A10000000000000000000004 /* SettingsView.swift in Sources */,
 				A10000000000000000000005 /* AddCertificateView.swift in Sources */,
